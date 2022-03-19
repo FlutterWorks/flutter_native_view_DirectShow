@@ -5,8 +5,11 @@ project(${PROJECT_NAME} LANGUAGES CXX)
 set(PLUGIN_NAME "flutter_native_view_plugin")
 
 add_library(${PLUGIN_NAME} SHARED
-  "../core/native_view_core.cc"
   "../core/utils.cc"
+  "../core/ffi_api.cc"
+  "../core/native_view_core.cc"
+  "../core/native_view_container.cc"
+  "../core/native_view_subclass_proc.cc"
   "flutter_native_view_plugin.cc"
 )
 apply_standard_settings(${PLUGIN_NAME})
@@ -28,3 +31,5 @@ set(flutter_native_view_bundled_libraries
   ""
   PARENT_SCOPE
 )
+
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /wd4302 /wd4311 /wd4312")

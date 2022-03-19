@@ -16,28 +16,17 @@
 /// You should have received a copy of the GNU General Public License along with
 /// flutter_native_view. If not, see <https://www.gnu.org/licenses/>.
 ///
-#ifndef FLUTTER_PLUGIN_FLUTTER_NATIVE_VIEW_PLUGIN_H_
-#define FLUTTER_PLUGIN_FLUTTER_NATIVE_VIEW_PLUGIN_H_
-#include <flutter_plugin_registrar.h>
 
-#include "native_view_container.h"
+#include <Windows.h>
+
 #include "native_view_core.h"
 
-#ifdef FLUTTER_PLUGIN_IMPL
-#define FLUTTER_PLUGIN_EXPORT __declspec(dllexport)
-#else
-#define FLUTTER_PLUGIN_EXPORT __declspec(dllimport)
-#endif
+namespace flutternativeview {
 
-#if defined(__cplusplus)
-extern "C" {
-#endif
+LRESULT NativeViewSubclassProc(HWND window, UINT message, WPARAM wparam,
+                               LPARAM lparam, UINT_PTR subclass_id,
+                               DWORD_PTR ref_data) noexcept;
 
-FLUTTER_PLUGIN_EXPORT void FlutterNativeViewPluginRegisterWithRegistrar(
-    FlutterDesktopPluginRegistrarRef registrar);
+void SetNativeViewSubclassProc(HWND native_view, HWND window);
 
-#if defined(__cplusplus)
-}  // extern "C"
-#endif
-
-#endif  // FLUTTER_PLUGIN_FLUTTER_NATIVE_VIEW_PLUGIN_H_
+}  // namespace flutternativeview

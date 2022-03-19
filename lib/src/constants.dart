@@ -16,15 +16,7 @@
 /// flutter_native_view. If not, see <https://www.gnu.org/licenses/>.
 ///
 
-import 'package:flutter/widgets.dart';
-
-const String kEnsureInitialized = 'EnsureInitialized';
-const String kUpdateLayeredColor = 'UpdateLayeredColor';
-const String kCreateNativeView = 'CreateNativeView';
-const String kResizeNativeView = 'ResizeNativeView';
-const String kDestroyNativeView = 'DestroyNativeView';
-
-const String kQueryNativeViews = 'QueryNativeViews';
-
-const int kDefaultInitializationType = 1;
-const Color kDefaultLayeredColor = Color(0xFFB66146);
+/// Default method channel name.
+/// Only used for window proc registration.
+///
+const String kMethodChannelName = 'flutter_native_view';

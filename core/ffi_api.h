@@ -16,28 +16,37 @@
 /// You should have received a copy of the GNU General Public License along with
 /// flutter_native_view. If not, see <https://www.gnu.org/licenses/>.
 ///
-#ifndef FLUTTER_PLUGIN_FLUTTER_NATIVE_VIEW_PLUGIN_H_
-#define FLUTTER_PLUGIN_FLUTTER_NATIVE_VIEW_PLUGIN_H_
-#include <flutter_plugin_registrar.h>
 
-#include "native_view_container.h"
+#ifndef FFI_API_H_
+#define FFI_API_H_
+
 #include "native_view_core.h"
 
-#ifdef FLUTTER_PLUGIN_IMPL
-#define FLUTTER_PLUGIN_EXPORT __declspec(dllexport)
-#else
-#define FLUTTER_PLUGIN_EXPORT __declspec(dllimport)
+#ifndef DLLEXPORT
+#define DLLEXPORT __declspec(dllexport)
 #endif
 
-#if defined(__cplusplus)
+#ifdef __cplusplus
 extern "C" {
 #endif
 
-FLUTTER_PLUGIN_EXPORT void FlutterNativeViewPluginRegisterWithRegistrar(
-    FlutterDesktopPluginRegistrarRef registrar);
+DLLEXPORT void NativeViewCoreEnsureInitialized();
 
-#if defined(__cplusplus)
-}  // extern "C"
+DLLEXPORT void NativeViewCoreCreateNativeView(uint32_t native_view,
+                                              uint32_t left, uint32_t top,
+                                              uint32_t right, uint32_t bottom,
+                                              double device_pixel_ratio);
+
+DLLEXPORT void NativeViewCoreDisposeNativeView(uint32_t native_view);
+
+DLLEXPORT void NativeViewCoreSetHitTestBehavior(uint32_t hittest_behavior);
+
+DLLEXPORT void NativeViewCoreResizeNativeView(uint32_t native_view,
+                                              uint32_t left, uint32_t top,
+                                              uint32_t right, uint32_t bottom);
+
+#ifdef __cplusplus
+}
 #endif
 
-#endif  // FLUTTER_PLUGIN_FLUTTER_NATIVE_VIEW_PLUGIN_H_
+#endif
