@@ -30,9 +30,10 @@ class _MyAppState extends State<MyApp> {
     ),
     NativeViewController(
       handle: FindWindow(
-        'Notepad'.toNativeUtf16(),
         nullptr,
+        'This PC'.toNativeUtf16(),
       ),
+      hitTestBehavior: HitTestBehavior.translucent,
     ),
   ];
 

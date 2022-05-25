@@ -1,21 +1,10 @@
-/// This file is part of flutter_native_view
-/// (https://github.com/alexmercerind/flutter_native_view).
-///
-/// Copyright (C) 2022 Hitesh Kumar Saini <saini123hitesh@gmail.com>
-///
-/// flutter_native_view is free software: you can redistribute it and/or modify
-/// it under the terms of the GNU General Public License as published by the
-/// Free Software Foundation, either version 3 of the License, or (at your
-/// option) any later version.
-///
-/// flutter_native_view is distributed in the hope that it will be useful, but
-/// WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
-/// or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for
-/// more details.
-///
-/// You should have received a copy of the GNU General Public License along with
-/// flutter_native_view. If not, see <https://www.gnu.org/licenses/>.
-///
+// This file is a part of flutter_native_view
+// (https://github.com/alexmercerind/flutter_native_view).
+//
+// Copyright (c) 2022, Hitesh Kumar Saini <saini123hitesh@gmail.com>.
+// All rights reserved.
+// Use of this source code is governed by MIT license that can be found in the
+// LICENSE file.
 
 #include "native_view_core.h"
 
@@ -38,18 +27,14 @@ NativeViewCore::NativeViewCore(HWND window, HWND child_window)
 
 void NativeViewCore::EnsureInitialized() {
   flutternativeview::SetWindowComposition(window_, 6, 0);
-  TITLEBARINFOEX title_bar_info;
-  title_bar_info.cbSize = sizeof(TITLEBARINFOEX);
-  ::SendMessage(window_, WM_GETTITLEBARINFOEX, 0, (LPARAM)&title_bar_info);
-  title_bar_height_ =
-      title_bar_info.rcTitleBar.bottom - title_bar_info.rcTitleBar.top;
-  native_view_container_ = flutternativeview::GetNativeViewContainer(window_);
+  native_view_container_ =
+      flutternativeview::NativeViewContainer::GetInstance()->Get(window_);
 }
 
 void NativeViewCore::CreateNativeView(HWND native_view, RECT rect,
                                       double device_pixel_ratio) {
   ::SetParent(native_view, native_view_container_);
-  ::ShowWindow(native_view, SWP_NOACTIVATE);
+  ::ShowWindow(native_view, SW_SHOW);
   flutternativeview::SetNativeViewSubclassProc(native_view, window_);
   auto style = ::GetWindowLongPtr(native_view, GWL_STYLE);
   style &= ~(WS_CAPTION | WS_THICKFRAME | WS_MINIMIZEBOX | WS_MAXIMIZEBOX |
@@ -83,6 +68,13 @@ void NativeViewCore::SetHitTestBehavior(int32_t hittest_behavior) {
 }
 
 void NativeViewCore::ResizeNativeView(HWND native_view, RECT rect) {
+  // TODO: Examine behavior in future.
+  // if (native_views_[native_view].left == rect.left &&
+  //     native_views_[native_view].top == rect.top &&
+  //     native_views_[native_view].right == rect.right &&
+  //     native_views_[native_view].bottom == rect.bottom) {
+  //   return;
+  // }
   native_views_[native_view] = rect;
   auto global_rect =
       GetGlobalRect(rect.left, rect.top, rect.right, rect.bottom);
@@ -108,27 +100,53 @@ std::optional<HRESULT> NativeViewCore::WindowProc(HWND hwnd, UINT message,
       break;
     }
     case WM_SIZE: {
-      switch (wparam) {
-        case SIZE_MINIMIZED: {
-          ::ShowWindow(native_view_container_, SW_MINIMIZE);
-          break;
-        }
-        case SIZE_RESTORED: {
-          ::ShowWindow(native_view_container_, SW_RESTORE);
-          break;
-        }
-        // TODO: Does not look native. Improve message handling in future.
-        // Apparently a window cannot be maximized without stealing the focus in
-        // Win32 API.
-        // case SIZE_MAXIMIZED: {
-        //   ::ShowWindow(native_view_container_, SW_MAXIMIZE);
-        //   break;
-        // }
-        default:
-          break;
+      // Handle Windows's minimize & maximize animations properly.
+      // Since |SetWindowPos| & other Win32 APIs on |native_view_container_|
+      // do not re-produce the same DWM animations like  actual user
+      // interractions on the |window_| do (though both windows are overlapped
+      // tightly but maximize and minimze animations can't be mimiced for the
+      // both of them at the same time), the best solution is to make the
+      // |window_| opaque & hide |native_view_container_| & alter it's position.
+      // After that, finally make |native_view_container_| visible again &
+      // |window_| transparent again. This approach is not perfect, but it's the
+      // best we can do. The minimize & maximize animations on the |window_|
+      // look good with just a slight glitch on the visible native views. In
+      // future, maybe replacing the |NativeView| widget (Flutter-side) with
+      // equivalent window screenshot will result in a totally seamless
+      // experience.
+      if (wparam != SIZE_RESTORED || last_wm_size_wparam_ == SIZE_MINIMIZED ||
+          last_wm_size_wparam_ == SIZE_MAXIMIZED ||
+          was_window_hidden_due_to_minimize_) {
+        was_window_hidden_due_to_minimize_ = false;
+        // Minimize condition is handled separately inside |WM_WINDOWPOSCHANGED|
+        // case, since we don't want to cause unnecessary redraws (& show/hide)
+        // when user is resizing the window by dragging the window border.
+        SetWindowComposition(window_, 0, 0);
+        ::ShowWindow(native_view_container_, SW_HIDE);
+        last_thread_time_ =
+            std::chrono::duration_cast<std::chrono::milliseconds>(
+                std::chrono::system_clock::now().time_since_epoch())
+                .count();
+        std::thread(
+            [=](uint64_t time) {
+              if (time < last_thread_time_) {
+                return;
+              }
+              std::this_thread::sleep_for(
+                  std::chrono::milliseconds(kNativeViewPositionAndShowDelay));
+              SetWindowComposition(window_, 6, 0);
+              // Handling SIZE_MINIMIZED separately.
+              if (wparam != SIZE_MINIMIZED) {
+                ::ShowWindow(native_view_container_, SW_SHOWNOACTIVATE);
+              }
+            },
+            last_thread_time_)
+            .detach();
       }
+      last_wm_size_wparam_ = wparam;
       break;
     }
+    // Keep |native_view_container_| behind the |window_|.
     case WM_MOVE:
     case WM_MOVING:
     case WM_WINDOWPOSCHANGED: {
@@ -136,13 +154,24 @@ std::optional<HRESULT> NativeViewCore::WindowProc(HWND hwnd, UINT message,
       ::GetWindowRect(window_, &window_rect);
       if (window_rect.right - window_rect.left > 0 &&
           window_rect.bottom - window_rect.top > 0) {
-        ::MoveWindow(native_view_container_, window_rect.left, window_rect.top,
-                     window_rect.right - window_rect.left,
-                     window_rect.bottom - window_rect.top, TRUE);
+        ::SetWindowPos(native_view_container_, window_, window_rect.left,
+                       window_rect.top, window_rect.right - window_rect.left,
+                       window_rect.bottom - window_rect.top, SWP_NOACTIVATE);
+        // |window_| is minimized.
+        if (window_rect.left < 0 && window_rect.top < 0 &&
+            window_rect.right < 0 && window_rect.bottom < 0) {
+          // Hide |native_view_container_| to prevent showing
+          // |native_view_container_| before |window_| placement
+          // i.e when restoring window after clicking the taskbar icon.
+          SetWindowComposition(window_, 0, 0);
+          ::ShowWindow(native_view_container_, SW_HIDE);
+          was_window_hidden_due_to_minimize_ = true;
+        }
       }
       break;
     }
     case WM_CLOSE: {
+      ::SendMessage(native_view_container_, WM_CLOSE, 0, 0);
       for (const auto& [native_view, rect] : native_views_) {
         ::SendMessage(native_view, WM_CLOSE, 0, 0);
       }

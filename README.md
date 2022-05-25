@@ -1,26 +1,37 @@
 # [flutter_native_view](https://github.com/alexmercerind/flutter_native_view)
 
+[![](https://img.shields.io/twitter/follow/alexmercerind)](https://twitter.com/alexmercerind) • [![MIT](https://img.shields.io/badge/license-MIT-green.svg)](https://github.com/alexmercerind/flutter_native_view/LICENSE) • [![Donate](https://img.shields.io/badge/Donate-PayPal-blue.svg)](https://paypal.me/alexmercerind) • [![pub package](https://img.shields.io/pub/v/flutter_native_view.svg)](https://pub.dartlang.org/packages/flutter_native_view)
+
 Embedding native windows & components directly into Flutter window.
 
 ## Example
 
 Video showing a Flutter Windows app running with embedded webview & VLC using [flutter_native_view](https://github.com/alexmercerind/flutter_native_view).
 
+Notice how `AppBar` is on-top of the the native surfaces & both native surfaces scroll perfectly.
+
 https://user-images.githubusercontent.com/28951144/159073594-813700fb-0988-424f-86b5-381beccf4247.mp4
+
+_[slight lag & delay can be observed due to screen recording. the actual experience is very seamless]_
 
 Try running the [example](./example) application by cloning the repository.
 
 ## Sponsor
 
 You may sponsor this project's future development & research at:
+
+- [GitHub Sponsors](https://github.com/sponsors/alexmercerind) (monthly-recurring)
 - [PayPal](https://www.paypal.me/alexmercerind) (one-time)
-- [Patreon](https://www.patreon.com/harmonoid) (monthly-recurring)
 
 It'll be a great motivation for me to continue.
 
 ### 💖 Current Sponsors
 
 - [Ahmad Arif Aulia Sutarman](https://github.com/damywise) • 20$ • one-time
+
+## Used By
+
+- [dart_vlc](https://github.com/alexmercerind/dart_vlc#nativevideo)
 
 ## Description
 
@@ -57,7 +68,7 @@ Add following lines to your `windows/runner/main.cpp` file:
 ```diff
   window.SetQuitOnClose(true);
 
-+ flutternativeview::CreateNativeViewContainer();
++ flutternativeview::NativeViewContainer::GetInstance()->Create();
 
   ::MSG msg;
   while (::GetMessage(&msg, nullptr, 0, 0)) {
@@ -144,21 +155,16 @@ controller.dispose();
 - Windows 10 & higher support.
 - Proper disposing of `HWND` and instances.
 - Semi transparent `Widget`s on top of `NativeView`.
-- Customizable hit-test i.e. optional interactability with the `NativeView`s.
 - Placement of `NativeView`s inside scrollables like `ListView`s.
+- [UNSTABLE] Customizable hit-test i.e. optional interactability with the `NativeView`s.
 
 #### Under Progress
 
-- Finalized API.
-- General stability.
-- Better maximize/minimize animations.
+- Stable support for interactability with the `NativeView`s [maybe switching to programmatic approach].
 - Support for older Windows versions.
 - Defining z-order for each `NativeViewController`.
-
-## Known Issues
-
-- Windows snapping layouts & window snapping (only when a `NativeView` is visible on screen).
-- `HitTestBehavior.translucent` leaks through the title-bar.
+- Finalized API.
+- General stability.
 
 ## Motivation
 
@@ -178,8 +184,6 @@ I plan to add Linux support soon. For now, limiting the scope of work to just Wi
 
 ## License
 
-Currently licensing strictly.
+MIT License
 
-GNU General Public License v3.0
-
-Copyright (C) 2021, Hitesh Kumar Saini <<saini123hitesh@gmail.com>>
+Copyright (C) 2022, Hitesh Kumar Saini <<saini123hitesh@gmail.com>>

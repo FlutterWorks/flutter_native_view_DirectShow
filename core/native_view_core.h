@@ -1,21 +1,10 @@
-/// This file is part of flutter_native_view
-/// (https://github.com/alexmercerind/flutter_native_view).
-///
-/// Copyright (C) 2022 Hitesh Kumar Saini <saini123hitesh@gmail.com>
-///
-/// flutter_native_view is free software: you can redistribute it and/or modify
-/// it under the terms of the GNU General Public License as published by the
-/// Free Software Foundation, either version 3 of the License, or (at your
-/// option) any later version.
-///
-/// flutter_native_view is distributed in the hope that it will be useful, but
-/// WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
-/// or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for
-/// more details.
-///
-/// You should have received a copy of the GNU General Public License along with
-/// flutter_native_view. If not, see <https://www.gnu.org/licenses/>.
-///
+// This file is a part of flutter_native_view
+// (https://github.com/alexmercerind/flutter_native_view).
+//
+// Copyright (c) 2022, Hitesh Kumar Saini <saini123hitesh@gmail.com>.
+// All rights reserved.
+// Use of this source code is governed by MIT license that can be found in the
+// LICENSE file.
 
 #ifndef NATIVE_VIEW_CORE_H_
 #define NATIVE_VIEW_CORE_H_
@@ -26,6 +15,7 @@
 #include <functional>
 #include <map>
 #include <optional>
+#include <thread>
 #include <vector>
 
 #include "native_view_container.h"
@@ -36,6 +26,8 @@ namespace flutternativeview {
 
 class NativeViewCore {
  public:
+  static constexpr auto kNativeViewPositionAndShowDelay = 300;
+
   static NativeViewCore* GetInstance();
 
   static void SetInstance(std::unique_ptr<NativeViewCore> instance);
@@ -70,8 +62,10 @@ class NativeViewCore {
   HWND child_window_ = nullptr;
   HWND native_view_container_ = nullptr;
   double device_pixel_ratio_ = 1.0;
-  int32_t title_bar_height_ = 0;
   std::map<HWND, RECT> native_views_ = {};
+  uint64_t last_thread_time_ = 0;
+  WPARAM last_wm_size_wparam_ = SIZE_RESTORED;
+  bool was_window_hidden_due_to_minimize_ = false;
   static std::unique_ptr<NativeViewCore> instance_;
   static std::optional<int32_t> proc_id_;
 };
